@@ -1,0 +1,71 @@
+//
+//  ImageFieldTemplate.swift
+//
+//
+//  Created by Ivan Rzhanoi on 4.6.2024.
+//
+
+import Vapor
+import SwiftHtml
+
+public struct ImageFieldTemplate: TemplateRepresentable {
+    
+    public var context: ImageFieldContext
+    
+    public init(_ context: ImageFieldContext) {
+        self.context = context
+    }
+    
+    @TagBuilder
+    public func render(_ req: Request) -> Tag {
+        
+        if let url = context.previewUrl {
+            Img(src: req.fs.resolve(key: url), alt: context.key)
+        } else {
+            Img(src: "/img/logo.png", alt: "default post image")
+        }
+        
+        LabelTemplate(context.label).render(req)
+        
+        Input()
+            .type(.file)
+            .key(context.key)
+            .class("field")
+            .accept(context.accept)
+        
+        if let temporaryFile = context.data.temporaryFile {
+            Input()
+                .key(context.key + "TemporaryFieldKey")
+                .value(temporaryFile.key)
+                .type(.hidden)
+            
+            Input()
+                .key(context.key + "TemporaryFieldName")
+                .value(temporaryFile.name)
+                .type(.hidden)
+        }
+        
+        if let key = context.data.originalKey {
+            Input()
+                .key(context.key + "OriginalKey")
+                .value(key)
+                .type(.hidden)
+        }
+        
+        if !context.label.required {
+            Input()
+                .key(context.key + "ShouldRemove")
+                .value(String(true))
+                .type(.checkbox)
+                .checked(context.data.shouldRemove)
+            
+            Label("Remove")
+                .for(context.key + "Remove")
+        }
+        
+        if let error = context.error {
+            Span(error)
+                .class("error")
+        }
+    }
+}
